@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Sistem bağımlılıkları (psycopg2 için gerekli)
+# Sistem bağımlılıkları (psycopg için gerekli)
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
