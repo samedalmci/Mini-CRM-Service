@@ -14,6 +14,7 @@ async def startup_event():
 
 async def init_db():
     from db import engine
-    # Burada connect edip tabloları kontrol edersin
+    # Burada connect edip tabloları kont rol edersin
     with engine.begin() as conn:
         pass
+ 
