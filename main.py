@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 import asyncio
-from routes import users, notes
+from router import users, notes
 
 app = FastAPI()
 
-app.include_router(users.router) 
+app.include_router(users.router)
 app.include_router(notes.router)
 
 @app.on_event("startup")
