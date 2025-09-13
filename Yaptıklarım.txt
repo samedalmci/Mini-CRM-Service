@@ -1,0 +1,28 @@
+Yaptıklarım
+
+
+adım 1 
+-Kütüphane kurulmları-
+
+fastapi → REST API yazmanı sağlar.
+
+uvicorn[standard] → FastAPI uygulamasını çalıştırır.
+
+python-multipart → Form ve dosya verisi işler.
+
+python-jose[cryptography] → JWT token oluşturup doğrular.
+
+passlib[bcrypt] → Parolaları güvenli şekilde hashler ve doğrular.
+
+
+Adım 2
+-Jwt Login-
+
+Adım 3
+-register-
+
+Adım 4
+-Docker PostgreSQL eklemeleri-
+
+dockerda sql kurulumu yaptık sonra Dbeaver ile birbirine bağladık ardından 
+dockerfile, .yml dosyları ve docker-compose up --build ile kurulumu yapıldı
