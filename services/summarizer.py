@@ -1,5 +1,5 @@
 # summarizer.py
-from transformers import pipeline
+from transformers import T5Tokenizer, T5ForConditionalGeneration
 import torch
 from threading import Lock
 from sqlmodel import Session
@@ -12,11 +12,10 @@ summarize_lock = Lock()
 def load_summarizer():
     global SUMMARIZER
     if SUMMARIZER is None:
-        SUMMARIZER = pipeline(
-            "summarization",
-            model="sshleifer/distilbart-cnn-6-6",
-            device=0 if torch.cuda.is_available() else -1
-        )
+        tokenizer = T5Tokenizer.from_pretrained("t5-small")
+        model = T5ForConditionalGeneration.from_pretrained("t5-small")
+        device = 0 if torch.cuda.is_available() else -1
+        SUMMARIZER = (tokenizer, model, device)
     return SUMMARIZER
 
 def summarize_note(note_id: int):
@@ -35,12 +34,28 @@ def summarize_note(note_id: int):
                 text = " ".join(text.split()[:200])
 
             with summarize_lock:
-                summarizer = load_summarizer()
-                print("Summarizer loaded:", summarizer)
-                result = summarizer(text, max_length=60, min_length=10, do_sample=False)
+                tokenizer, model, device = load_summarizer()
+                print("Summarizer loaded:", model)
+
+                # T5 için input
+                input_text = "summarize: " + text
+                input_ids = tokenizer(input_text, return_tensors="pt").input_ids
+                if device >= 0:
+                    input_ids = input_ids.to(f"cuda:{device}")
+                    model = model.to(f"cuda:{device}")
+
+                # Generate summary
+                outputs = model.generate(
+                    input_ids,
+                    max_length=60,
+                    min_length=10,
+                    num_beams=4,
+                    early_stopping=True
+                )
+                result = tokenizer.decode(outputs[0], skip_special_tokens=True)
                 print("Summarization result:", result)
 
-            note.summary = result[0]["summary_text"].strip()
+            note.summary = result.strip()
             note.status = "done"
             session.add(note)
             session.commit()
