@@ -5,7 +5,7 @@ from router import users, notes
 from db import create_db_and_tables
 from queue_1 import worker_loop
 from services.summarizer import summarize_note
-import logging
+
 
 app = FastAPI()
 
@@ -26,7 +26,3 @@ async def init_db():
         pass
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-)

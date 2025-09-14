@@ -1,28 +1,19 @@
-# queue_1.py
 import asyncio
 import logging
 from services.summarizer import summarize_note
 
-logger = logging.getLogger(__name__)
+# Logging ayarı
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# Kuyruk
-QUEUE = asyncio.Queue()
-
-async def worker_loop():
-    logger.info("Worker loop started, waiting for jobs...")
-
+async def worker_loop(queue: asyncio.Queue):
+    logging.info("[queue] Worker başlatıldı, görevler bekleniyor...")
     while True:
-        note_id = await QUEUE.get()
+        note_id = await queue.get()
         try:
-            logger.info(f"[note_id={note_id}] Job received, starting summarization...")
+            logging.info(f"[queue] Note {note_id} işleme alındı.")
             summarize_note(note_id)
-            logger.info(f"[note_id={note_id}] Job finished.")
+            logging.info(f"[queue] Note {note_id} işlendi ✅")
         except Exception as e:
-            logger.exception(f"[note_id={note_id}] Worker error: {e}")
+            logging.error(f"[queue] Note {note_id} işlenirken hata: {e}")
         finally:
-            QUEUE.task_done()
-            logger.info(f"[note_id={note_id}] Job marked as done in queue.")
-
-def enqueue(note_id: int):
-    QUEUE.put_nowait(note_id)
-    logger.info(f"[note_id={note_id}] Job enqueued.")
+            queue.task_done()
