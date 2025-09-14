@@ -55,7 +55,9 @@ async def create_note(note_in: NoteCreate,
     session.refresh(new_note)
 
    # Background job'u ekle
-    background_tasks.add_task(summarize_note, new_note.id)
+    from queue_1 import add_to_queue
+    add_to_queue(new_note.id)
+
 
     # Kullanıcıya geri döndür
     return {
