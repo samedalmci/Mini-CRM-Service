@@ -1,19 +1,18 @@
-import asyncio
-import logging
-from services.summarizer import summarize_note
+from queue import Queue
+from threading import Thread
+from time import sleep
 
-# Logging ayarı
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+task_queue = Queue()
 
-async def worker_loop(queue: asyncio.Queue):
-    logging.info("[queue] Worker başlatıldı, görevler bekleniyor...")
+def add_to_queue(note_id: int):
+    task_queue.put(note_id)
+
+def worker_loop(summarize_fn):
     while True:
-        note_id = await queue.get()
+        note_id = task_queue.get()
         try:
-            logging.info(f"[queue] Note {note_id} işleme alındı.")
-            summarize_note(note_id)
-            logging.info(f"[queue] Note {note_id} işlendi ✅")
+            summarize_fn(note_id)
         except Exception as e:
-            logging.error(f"[queue] Note {note_id} işlenirken hata: {e}")
-        finally:
-            queue.task_done()
+            print(f"Task {note_id} failed:", e)
+        task_queue.task_done()
+        sleep(0.1)  
