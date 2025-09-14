@@ -12,8 +12,9 @@ COPY requirements.txt requirements.txt
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-
+ 
 COPY . .
 
 # Koyeb portu 8080 olmalı
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+ 
