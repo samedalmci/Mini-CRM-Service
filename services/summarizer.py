@@ -10,16 +10,18 @@ from models import Note
 SUMMARIZER = None
 summarize_lock = Lock()
 
+# load_summarizer fonksiyonunu değiştir
 def load_summarizer():
     global SUMMARIZER
     if SUMMARIZER is None:
-        print("[LOG] Loading T5-small model...")
-        tokenizer = T5Tokenizer.from_pretrained("t5-small")
-        model = T5ForConditionalGeneration.from_pretrained("t5-small")
+        print("[LOG] Loading tiny-t5 model...")
+        tokenizer = T5Tokenizer.from_pretrained("sshleifer/tiny-t5")
+        model = T5ForConditionalGeneration.from_pretrained("sshleifer/tiny-t5")
         device = 0 if torch.cuda.is_available() else -1
         SUMMARIZER = (tokenizer, model, device)
         print(f"[LOG] Model loaded. Device: {'cuda' if device>=0 else 'cpu'}")
     return SUMMARIZER
+
 
 def summarize_note(note_id: int):
     # Thread-safe lock
@@ -40,10 +42,10 @@ def summarize_note(note_id: int):
             session.commit()
             print(f"[LOG] Note {note_id} set to processing")
 
-            # Text’i kısalt (200 kelime)
+            # Text’i kısalt
             text = note.raw_text
-            if len(text.split()) > 200:
-                text = " ".join(text.split()[:200])
+            if len(text.split()) > 100:  # 200 yerine 100 kelime
+                text = " ".join(text.split()[:100])
 
             tokenizer, model, device = load_summarizer()
             input_text = "summarize: " + text
