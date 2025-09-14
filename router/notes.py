@@ -1,16 +1,17 @@
-# routes/notes.py
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlmodel import Session, select
 from db import get_session
 from models import Note, User
 from auth import get_current_active_user
+from services.summarizer import summarize_note
 from pydantic import BaseModel
-from queue_1 import add_to_queue
+
 
 router = APIRouter()
 
 class NoteCreate(BaseModel):
     raw_text: str
+
 
 @router.get("/notes/")
 async def list_notes(current_user: User  = Depends(get_current_active_user),
@@ -36,12 +37,15 @@ async def list_notes(current_user: User  = Depends(get_current_active_user),
         for note in notes
     ]
 
+
 @router.post("/notes/")
 async def create_note(note_in: NoteCreate,
+                      background_tasks: BackgroundTasks,
                       current_user: User = Depends(get_current_active_user),
                       session: Session = Depends(get_session)):
-
-    new_note = Note(
+    
+    # Notu DB'ye kaydet
+    new_note= Note(
         raw_text=note_in.raw_text,
         user_id=current_user.id,
         status="queued"
@@ -50,9 +54,16 @@ async def create_note(note_in: NoteCreate,
     session.commit()
     session.refresh(new_note)
 
-    # Queue ile job ekle
+   # Background job'u ekle
+# queue ile job ekle
+    from queue_1 import add_to_queue
+    from services.summarizer import summarize_note
+
     add_to_queue(new_note.id)
 
+
+
+    # Kullanıcıya geri döndür
     return {
         "id": new_note.id,
         "raw_text": new_note.raw_text,
