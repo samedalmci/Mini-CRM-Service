@@ -1,5 +1,5 @@
 # services/summarizer.py
-from transformers import PegasusTokenizer, PegasusForConditionalGeneration
+from transformers import T5Tokenizer, T5ForConditionalGeneration
 import torch
 from threading import Lock
 from sqlmodel import Session
@@ -13,20 +13,16 @@ summarize_lock = Lock()
 def load_summarizer():
     global SUMMARIZER
     if SUMMARIZER is None:
-        print("[LOG] Loading Pegasus model...")
-        model_name = "google/pegasus-xsum" # Veya 'google/pegasus-xsum-c4-small'
-        tokenizer = PegasusTokenizer.from_pretrained(model_name)
-        model = PegasusForConditionalGeneration.from_pretrained(model_name)
-        
-        # Quantization denemesi (512MB için çok önemli)
-        # model = model.half().to("cuda") # 16-bit float
-        
+        print("[LOG] Loading T5-small model...")
+        tokenizer = T5Tokenizer.from_pretrained("t5-small")
+        model = T5ForConditionalGeneration.from_pretrained("t5-small")
         device = 0 if torch.cuda.is_available() else -1
         SUMMARIZER = (tokenizer, model, device)
         print(f"[LOG] Model loaded. Device: {'cuda' if device>=0 else 'cpu'}")
     return SUMMARIZER
 
 def summarize_note(note_id: int):
+    # Thread-safe lock
     summarize_lock.acquire()
     try:
         with Session(engine) as session:
@@ -34,7 +30,7 @@ def summarize_note(note_id: int):
             if not note:
                 print(f"[LOG] Note {note_id} not found")
                 return
-            
+            # yeni satır
             if note.status == "done":
                 print(f"[LOG] Note {note_id} already done")
                 return
@@ -44,16 +40,14 @@ def summarize_note(note_id: int):
             session.commit()
             print(f"[LOG] Note {note_id} set to processing")
 
+            # Text’i kısalt (200 kelime)
             text = note.raw_text
-            # Metni kısa tutmak önemli
             if len(text.split()) > 200:
                 text = " ".join(text.split()[:200])
 
             tokenizer, model, device = load_summarizer()
-            
-            # Pegasus için farklı bir input formatı
-            input_text = text
-            input_ids = tokenizer(input_text, return_tensors="pt", truncation=True).input_ids
+            input_text = "summarize: " + text
+            input_ids = tokenizer(input_text, return_tensors="pt").input_ids
 
             if device >= 0:
                 input_ids = input_ids.to(f"cuda:{device}")
@@ -79,6 +73,7 @@ def summarize_note(note_id: int):
             print(f"[LOG] Note {note_id} done")
     except Exception as e:
         print(f"[LOG] Note {note_id} failed: {e}")
+        # Eğer fail olursa ayrı session ile failed ata
         with Session(engine) as session:
             note = session.get(Note, note_id)
             if note:
