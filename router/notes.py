@@ -55,8 +55,12 @@ async def create_note(note_in: NoteCreate,
     session.refresh(new_note)
 
    # Background job'u ekle
+# queue ile job ekle
     from queue_1 import add_to_queue
+    from services.summarizer import summarize_note
+
     add_to_queue(new_note.id)
+
 
 
     # Kullanıcıya geri döndür
