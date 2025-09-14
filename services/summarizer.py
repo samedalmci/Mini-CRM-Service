@@ -30,8 +30,9 @@ def summarize_note(note_id: int):
             if not note:
                 print(f"[LOG] Note {note_id} not found")
                 return
-            if note.status in ("done", "processing"):
-                print(f"[LOG] Note {note_id} already {note.status}")
+            
+            if note.status == "done":
+                print(f"[LOG] Note {note_id} already done")
                 return
 
             note.status = "processing"
