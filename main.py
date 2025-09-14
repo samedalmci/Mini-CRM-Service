@@ -3,8 +3,8 @@ import asyncio
 from threading import Thread
 from router import users, notes
 from db import create_db_and_tables
-from queue import worker_loop
-from summarizer import summarize_note
+from queue_1 import worker_loop
+from services.summarizer import summarize_note
 
 app = FastAPI()
 
