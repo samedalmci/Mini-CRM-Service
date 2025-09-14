@@ -1,3 +1,4 @@
+# summarizer.py
 from transformers import pipeline
 import torch
 from threading import Lock
@@ -5,11 +6,8 @@ from sqlmodel import Session
 from db import engine
 from models import Note
 
-
 SUMMARIZER = None
 summarize_lock = Lock()
-
-
 
 def load_summarizer():
     global SUMMARIZER
@@ -20,8 +18,6 @@ def load_summarizer():
             device=0 if torch.cuda.is_available() else -1
         )
     return SUMMARIZER
-
-
 
 def summarize_note(note_id: int):
     try:
@@ -34,17 +30,15 @@ def summarize_note(note_id: int):
             session.add(note)
             session.commit()
 
-            # pipeline ile özet
             text = note.raw_text
             if len(text.split()) > 200:
                 text = " ".join(text.split()[:200])
 
-            with summarize_lock:  # eşzamanlılık kontrolü
+            with summarize_lock:
                 summarizer = load_summarizer()
                 result = summarizer(text, max_length=60, min_length=10, do_sample=False)
-            
-            summary_text = result[0]["summary_text"].strip()
-            note.summary = summary_text
+
+            note.summary = result[0]["summary_text"].strip()
             note.status = "done"
             session.add(note)
             session.commit()

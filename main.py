@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 import asyncio
+from threading import Thread
 from router import users, notes
 from db import create_db_and_tables
+from queue import worker_loop
+from summarizer import summarize_note
 
 app = FastAPI()
 
@@ -11,13 +14,12 @@ app.include_router(notes.router)
 @app.on_event("startup")
 async def startup_event():
     create_db_and_tables()
-    # Veritabanı bağlantısını bloklayıcı değil, background task olarak aç
+    # Veritabanı bağlantısını bloklamadan başlat
     asyncio.create_task(init_db())
+    # Worker thread'i başlat
+    Thread(target=worker_loop, args=(summarize_note,), daemon=True).start()
 
 async def init_db():
     from db import engine
-    
-    # Burada connect edip tabloları kont rol edersin
     with engine.begin() as conn:
         pass
- 
